@@ -36,41 +36,21 @@ namespace ByteBank.View
 
         private void BtnProcessar_Click(object sender, RoutedEventArgs e)
         {
-            //retornar TaskScheduler que está atuando no momento
+            //retornar TaskScheduler que está atuando no momento, nesse caso o da thread principal
             var taskSchedularUI = TaskScheduler.FromCurrentSynchronizationContext();
 
             BtnProcessar.IsEnabled = false;
 
             var contas = r_Repositorio.GetContaClientes();
 
-            var resultado = new List<string>();
-
             AtualizarView(new List<string>(), TimeSpan.Zero);
 
             var inicio = DateTime.Now;
 
-            //define qual tarefa será executada ou não : TaskScheduler
-
-            // o linq só executada o que será utilizado, então devemos forçar essa inicialização 
-            //aqui utilizamos o ToArray()
-            var contasTarefas = contas.Select(conta =>
-            {
-                //constroi tarefas  : Factory
-                return Task.Factory.StartNew(() =>
-                {
-                    var resultadoConta = r_Servico.ConsolidarMovimentacao(conta);
-                    resultado.Add(resultadoConta);
-                });
-            }).ToArray();
-
-
-
-            // faz a verificação se a thread atual está sendo executada, mesma função do 
-            //IsAlive : WaitAll
-
-            Task.WhenAll(contasTarefas)
+            ConsolidarContas(contas)
                 .ContinueWith(task => { 
                     var fim = DateTime.Now;
+                    var resultado = task.Result;
                     AtualizarView(resultado, fim - inicio);
                 }, taskSchedularUI)
                 .ContinueWith(task => {
@@ -85,23 +65,22 @@ namespace ByteBank.View
             _cts.Cancel();
         }
 
-        private async Task<string[]> ConsolidarContas(IEnumerable<ContaCliente> contas, IProgress<string> reportadorDeProgresso, CancellationToken ct)
+        private Task<List<string>> ConsolidarContas(IEnumerable<ContaCliente> contas)
         {
+            var resultado = new List<string>();
+
             var tasks = contas.Select(conta =>
                 Task.Factory.StartNew(() =>
                 {
-                    ct.ThrowIfCancellationRequested();
-
-                    var resultadoConsolidacao = r_Servico.ConsolidarMovimentacao(conta, ct);
-
-                    reportadorDeProgresso.Report(resultadoConsolidacao);
-
-                    ct.ThrowIfCancellationRequested();
-                    return resultadoConsolidacao;
-                }, ct)
+                    var contaResultado = r_Servico.ConsolidarMovimentacao(conta);
+                    resultado.Add(contaResultado);
+                })
             );
 
-            return await Task.WhenAll(tasks);
+            return Task.WhenAll(tasks).ContinueWith(t =>
+            {
+                return resultado;
+            });
         }
 
         private void LimparView()
