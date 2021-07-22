@@ -36,6 +36,11 @@ namespace ByteBank.View
 
         private void BtnProcessar_Click(object sender, RoutedEventArgs e)
         {
+            //retornar TaskScheduler que está atuando no momento
+            var taskSchedularUI = TaskScheduler.FromCurrentSynchronizationContext();
+
+            BtnProcessar.IsEnabled = false;
+
             var contas = r_Repositorio.GetContaClientes();
 
             var resultado = new List<string>();
@@ -58,14 +63,19 @@ namespace ByteBank.View
                 });
             }).ToArray();
 
+
+
             // faz a verificação se a thread atual está sendo executada, mesma função do 
-            //IsAlive
+            //IsAlive : WaitAll
 
-            Task.WaitAll(contasTarefas);
-
-            var fim = DateTime.Now;
-
-            AtualizarView(resultado, fim - inicio);
+            Task.WhenAll(contasTarefas)
+                .ContinueWith(task => { 
+                    var fim = DateTime.Now;
+                    AtualizarView(resultado, fim - inicio);
+                }, taskSchedularUI)
+                .ContinueWith(task => {
+                    BtnProcessar.IsEnabled = true;    
+                }, taskSchedularUI);
         }
 
 
@@ -106,7 +116,7 @@ namespace ByteBank.View
             var tempoDecorrido = $"{ elapsedTime.Seconds }.{ elapsedTime.Milliseconds} segundos!";
             var mensagem = $"Processamento de {result.Count()} clientes em {tempoDecorrido}";
 
-            LstResultados.ItemsSource = result;
+             LstResultados.ItemsSource = result;
             TxtTempo.Text = mensagem;
         }
     }
