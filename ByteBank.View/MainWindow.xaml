@@ -1,0 +1,61 @@
+﻿<Window x:Class="ByteBank.View.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="ByteBank FrontOffice" Height="600" Width="525"
+        WindowStartupLocation="CenterScreen">
+    <DockPanel Margin="10">
+        <!-- Logotipo -->
+        <Image Source="/ByteBank.View;component/Assets/Logo.png"
+               Height="75"
+               DockPanel.Dock="Top"/>
+
+        <!-- Botão para Processamento -->
+        <TextBlock Name="TxtTempo"
+                   DockPanel.Dock="Bottom"
+                   HorizontalAlignment="Right">
+        </TextBlock>
+
+        <Grid DockPanel.Dock="Bottom">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <Button Name="BtnProcessar"
+                    Padding="10"
+                    Click="BtnProcessar_Click">
+                Fazer Processamento
+            </Button>
+
+            <Button Name="BtnCancelar"
+                    Padding="10"
+                    IsEnabled="False"
+                    Grid.Column="2"
+                    Click="BtnCancelar_Click">
+                Cancelar
+            </Button>
+
+        </Grid>
+        
+        
+        
+        <!-- Resultado -->
+        <TextBlock DockPanel.Dock="Top">Resultado:</TextBlock>
+        <TextBlock DockPanel.Dock="Top"
+                   Name="TxtProgresso"/>
+
+        <!-- Barra de Progresso para dar feedback ao usuário -->
+        <ProgressBar Name="PgsProgresso"
+                     Minimum="0"
+                     Height="23"
+                     DockPanel.Dock="Bottom"/>
+
+        <ListView Name="LstResultados"
+                  Background="Beige"
+                  Margin="0 10">
+        </ListView>
+    </DockPanel>
+</Window>
