@@ -34,10 +34,8 @@ namespace ByteBank.View
             r_Servico = new ContaClienteService();
         }
 
-        private void BtnProcessar_Click(object sender, RoutedEventArgs e)
+        private async void BtnProcessar_Click(object sender, RoutedEventArgs e)
         {
-            //retornar TaskScheduler que está atuando no momento, nesse caso o da thread principal
-            var taskSchedularUI = TaskScheduler.FromCurrentSynchronizationContext();
 
             BtnProcessar.IsEnabled = false;
 
@@ -47,15 +45,11 @@ namespace ByteBank.View
 
             var inicio = DateTime.Now;
 
-            ConsolidarContas(contas)
-                .ContinueWith(task => { 
-                    var fim = DateTime.Now;
-                    var resultado = task.Result;
-                    AtualizarView(resultado, fim - inicio);
-                }, taskSchedularUI)
-                .ContinueWith(task => {
-                    BtnProcessar.IsEnabled = true;    
-                }, taskSchedularUI);
+            //o await faz o encadeamento e informa qual thread do contexto atual
+            var resultado = await ConsolidarContas(contas);
+            var fim = DateTime.Now;
+            AtualizarView(resultado, fim - inicio);
+            BtnProcessar.IsEnabled = true;
         }
 
 
@@ -65,22 +59,15 @@ namespace ByteBank.View
             _cts.Cancel();
         }
 
-        private Task<List<string>> ConsolidarContas(IEnumerable<ContaCliente> contas)
+        private async Task<string[]> ConsolidarContas(IEnumerable<ContaCliente> contas)
         {
-            var resultado = new List<string>();
+
 
             var tasks = contas.Select(conta =>
-                Task.Factory.StartNew(() =>
-                {
-                    var contaResultado = r_Servico.ConsolidarMovimentacao(conta);
-                    resultado.Add(contaResultado);
-                })
+                Task.Factory.StartNew(() => r_Servico.ConsolidarMovimentacao(conta))
             );
 
-            return Task.WhenAll(tasks).ContinueWith(t =>
-            {
-                return resultado;
-            });
+            return await Task.WhenAll(tasks);
         }
 
         private void LimparView()
@@ -95,7 +82,7 @@ namespace ByteBank.View
             var tempoDecorrido = $"{ elapsedTime.Seconds }.{ elapsedTime.Milliseconds} segundos!";
             var mensagem = $"Processamento de {result.Count()} clientes em {tempoDecorrido}";
 
-             LstResultados.ItemsSource = result;
+            LstResultados.ItemsSource = result;
             TxtTempo.Text = mensagem;
         }
     }
