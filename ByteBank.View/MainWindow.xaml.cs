@@ -89,7 +89,7 @@ namespace ByteBank.View
                 Task.Factory.StartNew(() => {
                     ct.ThrowIfCancellationRequested();
 
-                    var resultadoConsolidacao = r_Servico.ConsolidarMovimentacao(conta);
+                    var resultadoConsolidacao = r_Servico.ConsolidarMovimentacao(conta, ct);
 
                     reportadorDeProgresso.Report(resultadoConsolidacao);
 
