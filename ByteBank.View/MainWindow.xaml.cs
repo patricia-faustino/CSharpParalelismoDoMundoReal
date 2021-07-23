@@ -47,8 +47,14 @@ namespace ByteBank.View
 
             var inicio = DateTime.Now;
 
+            var progress = new Progress<String>(str =>
+                PgsProgresso.Value++);
+
+            //var byteBankProgress = new ByteBankProgress<String>(str =>
+            //PgsProgresso.Value++);
+
             //o await faz o encadeamento e informa qual thread do contexto atual
-            var resultado = await ConsolidarContas(contas);
+            var resultado = await ConsolidarContas(contas, progress);
             var fim = DateTime.Now;
             AtualizarView(resultado, fim - inicio);
             BtnProcessar.IsEnabled = true;
@@ -61,19 +67,14 @@ namespace ByteBank.View
             _cts.Cancel();
         }
 
-        private async Task<string[]> ConsolidarContas(IEnumerable<ContaCliente> contas)
+        private async Task<string[]> ConsolidarContas(IEnumerable<ContaCliente> contas, IProgress<string> reportadorDeProgresso)
         {
-            var taskSchedulerGui = TaskScheduler.FromCurrentSynchronizationContext();
-
             var tasks = contas.Select(conta =>
                 Task.Factory.StartNew(() => { 
                     var resultadoConsolidacao = r_Servico.ConsolidarMovimentacao(conta);
 
-                    Task.Factory.StartNew(() => PgsProgresso.Value++,
-                        CancellationToken.None,
-                        TaskCreationOptions.None,
-                        taskSchedulerGui
-                        );
+                    reportadorDeProgresso.Report(resultadoConsolidacao);
+
                     return resultadoConsolidacao;
                  })
             );
