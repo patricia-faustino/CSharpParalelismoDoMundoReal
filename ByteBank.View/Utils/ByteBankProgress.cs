@@ -1,4 +1,4 @@
-﻿using System;
+﻿ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,6 +8,7 @@ namespace ByteBank.View.Utils
 {
     public class ByteBankProgress<T> : IProgress<T>
     {
+        //action não se preocupa com o retorno diferente da function
         private readonly Action<T> _handler;
         private readonly TaskScheduler _taskScheduler;
 
