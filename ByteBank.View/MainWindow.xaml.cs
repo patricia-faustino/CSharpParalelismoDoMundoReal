@@ -47,6 +47,8 @@ namespace ByteBank.View
 
             var inicio = DateTime.Now;
 
+            BtnCancelar.IsEnabled = true;
+
             var progress = new Progress<String>(str =>
                 PgsProgresso.Value++);
 
