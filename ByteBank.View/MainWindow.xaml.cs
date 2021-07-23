@@ -38,6 +38,7 @@ namespace ByteBank.View
         {
 
             BtnProcessar.IsEnabled = false;
+            _cts = new CancellationTokenSource();
 
             var contas = r_Repositorio.GetContaClientes();
 
@@ -54,12 +55,25 @@ namespace ByteBank.View
 
             //var byteBankProgress = new ByteBankProgress<String>(str =>
             //PgsProgresso.Value++);
+            try
+            {
+                //o await faz o encadeamento e informa qual thread do contexto atual
+                var resultado = await ConsolidarContas(contas, progress, _cts.Token);
+                var fim = DateTime.Now;
+                AtualizarView(resultado, fim - inicio);
 
-            //o await faz o encadeamento e informa qual thread do contexto atual
-            var resultado = await ConsolidarContas(contas, progress);
-            var fim = DateTime.Now;
-            AtualizarView(resultado, fim - inicio);
-            BtnProcessar.IsEnabled = true;
+            }
+            catch (OperationCanceledException)
+            {
+
+                TxtTempo.Text = "Operação cancelada pelo usuário";
+            }
+            finally
+            {
+                BtnProcessar.IsEnabled = true;
+                BtnCancelar.IsEnabled = false;
+            }
+            
         }
 
 
@@ -69,16 +83,20 @@ namespace ByteBank.View
             _cts.Cancel();
         }
 
-        private async Task<string[]> ConsolidarContas(IEnumerable<ContaCliente> contas, IProgress<string> reportadorDeProgresso)
+        private async Task<string[]> ConsolidarContas(IEnumerable<ContaCliente> contas, IProgress<string> reportadorDeProgresso, CancellationToken ct)
         {
             var tasks = contas.Select(conta =>
-                Task.Factory.StartNew(() => { 
+                Task.Factory.StartNew(() => {
+                    ct.ThrowIfCancellationRequested();
+
                     var resultadoConsolidacao = r_Servico.ConsolidarMovimentacao(conta);
 
                     reportadorDeProgresso.Report(resultadoConsolidacao);
 
+                    ct.ThrowIfCancellationRequested();
+
                     return resultadoConsolidacao;
-                 })
+                 }, ct)
             );
 
             return await Task.WhenAll(tasks);
